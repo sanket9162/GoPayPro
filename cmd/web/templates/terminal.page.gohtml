@@ -33,7 +33,7 @@
      <a id="pay-button" href="javascript:void(0)" class="btn btn-primary" onclick="val()"> Charge Card</a>
      <div class="text-center d-none" id="processing-payment">
         <div class="spinner-border text-primary" role="status">
-            <span class="visully-hidden">Loading...</span>
+            <span class="visually-hidden">Loading...</span>
         </div>
      </div>
 
@@ -51,6 +51,12 @@
     const processing = document.getElementById("processing-payment")
 
     stripe = Stripe('pk_test_51Rd3B5SCqT9CAPZK4xuw1dLAfNU6ejXoQqGcKDswbfUC7mMXwMiNDmoJCBf9w9mTYAoKlJOj67BiOa2FxfPotKAe00ZpQlTgWe')
+    
+    function hidePayButton() {
+        payButton.classList.add("d-none");
+        processing.classList.remove("d-none")
+    }
+
     function val(){
         let form = document.getElementById("charge_form")
         if (form.checkValidity() === false){
@@ -60,6 +66,7 @@
             return
         }
         form.classList.add("was-validated")
+        hidePayButton()
     }
 
     (function() {
