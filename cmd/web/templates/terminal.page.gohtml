@@ -6,6 +6,7 @@
 {{define "content"}}
 <h2 class="mt-3 text-center">Virtual Terminal</h2>
 <hr>
+<div class="alert alert-danger text-center d-none" id="card-messages"></div>
 
 <form action="/payment-secceeded" method="post" naem="charge_form" id="charge_form" class="d-block needs-validation charge-form" autocomplete="off" novalidate="">
     <div class="mb-3">
@@ -30,7 +31,11 @@
      </div>
      <hr>
      <a id="pay-button" href="javascript:void(0)" class="btn btn-primary" onclick="val()"> Charge Card</a>
-
+     <div class="text-center d-none" id="processing-payment">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visully-hidden">Loading...</span>
+        </div>
+     </div>
 
 </form>
 
@@ -41,11 +46,22 @@
 <script>
     let card 
     let stripe
+    const cardMessages = document.getElementById("card-messages")
+    const payButton = document.getElementById("pay-button")
+    const processing = document.getElementById("processing-payment")
 
     stripe = Stripe('pk_test_51Rd3B5SCqT9CAPZK4xuw1dLAfNU6ejXoQqGcKDswbfUC7mMXwMiNDmoJCBf9w9mTYAoKlJOj67BiOa2FxfPotKAe00ZpQlTgWe')
     function val(){
-        
+        let form = document.getElementById("charge_form")
+        if (form.checkValidity() === false){
+            this.event.preventDefault()
+            this.event.stopPropagation()
+            form.classList.add("was-validated")
+            return
+        }
+        form.classList.add("was-validated")
     }
+
     (function() {
     // create stripe & elements
     const elements = stripe.elements()
