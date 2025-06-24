@@ -37,6 +37,12 @@
         </div>
      </div>
 
+     <input type="hidden" name="payment-intent" id="payment-intent">
+     <input type="hidden" name="payment-method" id="payment-method">
+     <input type="hidden" name="payment-amount" id="payment-amount">
+     <input type="hidden" name="payment-currency" id="payment-currency">
+
+
 </form>
 
 {{end}}
@@ -67,6 +73,35 @@
         }
         form.classList.add("was-validated")
         hidePayButton()
+
+        let amountToCharge = String(parseFloat(document.getElementById("amount").value) * 100)
+        console.log(amountToCharge);
+        
+        let payload = {
+            amount: amountToCharge,
+            currency: "inr"
+        }
+
+        const reqestOptions = {
+            method: "post",
+            headers : {
+                "Accept" : "application/json",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload)
+        }
+
+        fetch("http://localhost:8001/api/payment-intent", reqestOptions)
+            .then(response => response.text())
+            .then(response => {
+                let data;
+                try {
+                    data = JSON.parse(response)
+                    console.log(data)
+                } catch (err) {
+                    console.log(err)
+                }
+            })
     }
 
     (function() {
