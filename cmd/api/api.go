@@ -39,17 +39,20 @@ func (app *application) serve() error {
 		ReadHeaderTimeout: 5 * time.Second,
 		WriteTimeout:      5 * time.Second,
 	}
-	app.infoLog.Println(fmt.Sprintf("Starting HTTP server in %s mode on port %d", app.config.env, app.config.port))
+
+	app.infoLog.Println(fmt.Sprintf("Starting Back end server in %s mode on port %d", app.config.env, app.config.port))
 
 	return srv.ListenAndServe()
 }
 
 func main() {
 	var cfg config
-	flag.IntVar(&cfg.port, "port", 8001, "Server port to listen on")
-	flag.StringVar(&cfg.env, "env", "development", "Application enviornment {development|production|meaintenance}")
+
+	flag.IntVar(&cfg.port, "port", 4001, "Server port to listen on")
+	flag.StringVar(&cfg.env, "env", "development", "Application enviornment {development|production|maintenance}")
 
 	flag.Parse()
+
 	cfg.stripe.key = os.Getenv("STRIPE_KEY")
 	cfg.stripe.secret = os.Getenv("STRIPE_SECRET")
 
@@ -65,6 +68,6 @@ func main() {
 
 	err := app.serve()
 	if err != nil {
-		log.Fatal()
+		log.Fatal(err)
 	}
 }
