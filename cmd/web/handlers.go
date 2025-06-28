@@ -1,13 +1,23 @@
 package main
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
+// VirtualTerminal displays the virtual terminal page
 func (app *application) VirtualTerminal(w http.ResponseWriter, r *http.Request) {
-	if err := app.renderTemplate(w, r, "terminal", nil); err != nil {
+	stringMap := make(map[string]string)
+	stringMap["publishable_key"] = app.config.stripe.key
+	fmt.Println(stringMap)
+	if err := app.renderTemplate(w, r, "terminal", &templateData{
+		StringMap: stringMap,
+	}); err != nil {
 		app.errorLog.Println(err)
 	}
 }
 
+// PaymentSucceeded displays the receipt page
 func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
@@ -24,14 +34,16 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 	paymentCurrency := r.Form.Get("payment_currency")
 
 	data := make(map[string]interface{})
-	data["cardholder_name"] = cardHolder
+	data["cardholder"] = cardHolder
 	data["email"] = email
 	data["pi"] = paymentIntent
 	data["pm"] = paymentMethod
 	data["pa"] = paymentAmount
 	data["pc"] = paymentCurrency
 
-	if err = app.renderTemplate(w, r, "succeeded", &templateData{
+	// should write this data to session, and then redirect user to new page?
+
+	if err := app.renderTemplate(w, r, "succeeded", &templateData{
 		Data: data,
 	}); err != nil {
 		app.errorLog.Println(err)
