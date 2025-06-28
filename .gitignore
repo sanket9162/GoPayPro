@@ -21,7 +21,7 @@ profile.cov
 # vendor/
 tmp/
 bin/
-
+ 
 # Go workspace file
 go.work
 go.work.sum
