@@ -9,26 +9,37 @@ import (
 )
 
 type templateData struct {
-	StringMap       map[string]string
-	IntMap          map[string]int
-	FloatMap        map[string]float32
-	Data            map[string]interface{}
-	CSRFToken       string
-	Flash           string
-	Warning         string
-	Error           string
-	IsAuthenticated int
-	API             string
-	CSSVersion      string
+	StringMap            map[string]string
+	IntMap               map[string]int
+	FloatMap             map[string]float32
+	Data                 map[string]interface{}
+	CSRFToken            string
+	Flash                string
+	Warning              string
+	Error                string
+	IsAuthenticated      int
+	API                  string
+	CSSVersion           string
+	StripeSecretKey      string
+	StripePublishableKey string
 }
 
-var functions = template.FuncMap{}
+var functions = template.FuncMap{
+	"formatCurrency": formatCurrency,
+}
+
+func formatCurrency(n int) string {
+	f := float32(n / 100)
+	return fmt.Sprintf("$%.2f", f)
+}
 
 //go:embed templates
 var templateFS embed.FS
 
 func (app *application) addDefaultData(td *templateData, r *http.Request) *templateData {
 	td.API = app.config.api
+	td.StripeSecretKey = app.config.stripe.secret
+	td.StripePublishableKey = app.config.stripe.key
 	return td
 }
 
@@ -39,7 +50,7 @@ func (app *application) renderTemplate(w http.ResponseWriter, r *http.Request, p
 
 	_, templateInMap := app.templateCache[templateToRender]
 
-	if app.config.env == "prodiction" && templateInMap {
+	if app.config.env == "production" && templateInMap {
 		t = app.templateCache[templateToRender]
 	} else {
 		t, err = app.parseTemplate(partials, page, templateToRender)
@@ -52,7 +63,9 @@ func (app *application) renderTemplate(w http.ResponseWriter, r *http.Request, p
 	if td == nil {
 		td = &templateData{}
 	}
+
 	td = app.addDefaultData(td, r)
+
 	err = t.Execute(w, td)
 	if err != nil {
 		app.errorLog.Println(err)
@@ -66,6 +79,7 @@ func (app *application) parseTemplate(partials []string, page, templateToRender 
 	var t *template.Template
 	var err error
 
+	// build partials
 	if len(partials) > 0 {
 		for i, x := range partials {
 			partials[i] = fmt.Sprintf("templates/%s.partial.gohtml", x)
@@ -78,7 +92,7 @@ func (app *application) parseTemplate(partials []string, page, templateToRender 
 		t, err = template.New(fmt.Sprintf("%s.page.gohtml", page)).Funcs(functions).ParseFS(templateFS, "templates/base.layout.gohtml", templateToRender)
 	}
 	if err != nil {
-		app.errorLog.Panicln(err)
+		app.errorLog.Println(err)
 		return nil, err
 	}
 
