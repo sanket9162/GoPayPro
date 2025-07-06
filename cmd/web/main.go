@@ -3,6 +3,7 @@ package main
 import (
 	"ecommerce_go/internal/driver"
 	"ecommerce_go/internal/models"
+	"encoding/gob"
 	"flag"
 	"fmt"
 	"html/template"
@@ -59,6 +60,8 @@ func (app *application) serve() error {
 }
 
 func main() {
+	gob.Register(map[string]interface{}{})
+
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("Error loading .env file")
