@@ -60,7 +60,7 @@ func (app *application) serve() error {
 }
 
 func main() {
-	gob.Register(map[string]interface{}{})
+	gob.Register(TransactionData{})
 
 	err := godotenv.Load()
 	if err != nil {
