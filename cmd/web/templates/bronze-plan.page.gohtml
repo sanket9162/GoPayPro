@@ -143,8 +143,8 @@
             let payload = {
                 paln: '{{$widget.PlanID}}',
                 payment_method: result.paymentMethod.id,
-                email: document.getElementById("cardholder-email").value
-                last_four: result.paymentMethod.card.last4
+                email: document.getElementById("cardholder-email").value,
+                last_four: result.paymentMethod.card.last4,
             }
             
             const requestOptions = {
@@ -156,7 +156,7 @@
                 body: JSON.stringify(payload)
             }
 
-            fetch("{{.API/api/create-customer-and-subscibe-to-plan}}", requestOptions)
+            fetch("{{.API}}/api/create-customer-and-subscibe-to-plan", requestOptions)
             .then(response => response.json())
             .then(function(data){
                 console.log(data)
