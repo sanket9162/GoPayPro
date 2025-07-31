@@ -2,6 +2,8 @@ module ecommerce_go
 
 go 1.24.2
 
+require golang.org/x/crypto v0.40.0
+
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/alexedwards/scs/v2 v2.8.0 // indirect
