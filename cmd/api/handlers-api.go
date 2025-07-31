@@ -250,6 +250,8 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// get the user from database by email; send error if invalid email
+
 	var payload struct {
 		Error   bool   `json:"error"`
 		Message string `json:"message"`
