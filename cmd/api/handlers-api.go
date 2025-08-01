@@ -268,6 +268,8 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// generate the token
+
 	var payload struct {
 		Error   bool   `json:"error"`
 		Message string `json:"message"`
