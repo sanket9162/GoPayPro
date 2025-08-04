@@ -68,7 +68,7 @@
 
   document.addEventListener("DOMContentLoaded", function() {
     if (localStorage.getItem("token") !== null) {
-      loginLink.innerHTML = '<a class="nav-link" onclick="logout()" href="#!">Logout</a><';
+      loginLink.innerHTML = '<a class="nav-link" onclick="logout()" href="#!">Logout</a>';
       vtLink.classList.remove("d-none");
     } else {
       loginLink.innerHTML = '<a class="nav-link" href="/login">Login</a>';
@@ -85,12 +85,12 @@
   function checkAuth() {
     if (localStorage.getItem("token") === null) {
       location.href = "/login";
-      return
+      return;
     } else {
       let token = localStorage.getItem("token");
       const myHeaders = new Headers();
-      myHeaders.append("Content-Type", "application/json")
-      myHeaders.append("Authorization", "Bearer " + token)
+      myHeaders.append("Content-Type", "application/json");
+      myHeaders.append("Authorization", "Bearer " + token);
 
       const requestOptions = {
         method: "POST",
@@ -102,13 +102,14 @@
       .then(function(data){
         if (data.error === true) {
           console.log("not logged in");
-          location.href = "/login"
+          location.href = "/login";
         } else {
-        console.log("Logged in")
+          console.log("Logged in");
         }
       })
     }
   }
+  
   </script>
   {{block "js" .}}
 

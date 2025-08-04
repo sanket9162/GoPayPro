@@ -300,12 +300,12 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 func (app *application) authenticateToken(r *http.Request) (*models.User, error) {
 	authorizationHeader := r.Header.Get("Authorization")
 	if authorizationHeader == "" {
-		return nil, errors.New("no aithorization header received")
+		return nil, errors.New("no authorization header received")
 	}
 
 	headerParts := strings.Split(authorizationHeader, " ")
 	if len(headerParts) != 2 || headerParts[0] != "Bearer" {
-		return nil, errors.New("no authrization header received")
+		return nil, errors.New("no authorization header received")
 	}
 
 	token := headerParts[1]

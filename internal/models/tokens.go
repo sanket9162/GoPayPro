@@ -22,7 +22,7 @@ type Token struct {
 	Scope     string    `json:"-"`
 }
 
-// GenerateToken generate a token that last for ttl, and return it
+// GenerateToken generates a token that lasts for ttl, and returns it
 func GenerateToken(userID int, ttl time.Duration, scope string) (*Token, error) {
 	token := &Token{
 		UserID: int64(userID),
@@ -47,14 +47,15 @@ func (m *DBModel) InsertToken(t *Token, u User) error {
 	defer cancel()
 
 	// delete existing tokens
-	stmt := `delete from tokens wher user_id = ?`
+	stmt := `delete from tokens where user_id = ?`
 	_, err := m.DB.ExecContext(ctx, stmt, u.ID)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	stmt = `insert into tokens (user_id, name, email, token_hash, created_at, updated_at)
 			values (?, ?, ?, ?, ?, ?)`
+
 	_, err = m.DB.ExecContext(ctx, stmt,
 		u.ID,
 		u.LastName,
@@ -63,9 +64,11 @@ func (m *DBModel) InsertToken(t *Token, u User) error {
 		time.Now(),
 		time.Now(),
 	)
+
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -77,13 +80,14 @@ func (m *DBModel) GetUserForToken(token string) (*User, error) {
 	var user User
 
 	query := `
-		select 
-			u.id, u.first, u.last_name, u.email
+		select
+			u.id, u.first_name, u.last_name, u.email
 		from
 			users u
 			inner join tokens t on (u.id = t.user_id)
 		where
-		 	t.hash = ?`
+			t.token_hash = ?
+	`
 
 	err := m.DB.QueryRowContext(ctx, query, tokenHash[:]).Scan(
 		&user.ID,
@@ -96,5 +100,6 @@ func (m *DBModel) GetUserForToken(token string) (*User, error) {
 		log.Println(err)
 		return nil, err
 	}
+
 	return &user, nil
 }

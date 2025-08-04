@@ -86,7 +86,7 @@ function val() {
                 console.log(data)
                 if (data.error === false) {
                     localStorage.setItem('token', data.aithentication_token.token)
-                    localStorage.setItem('token', data.aithentication_token.expiry)
+                    localStorage.setItem('token_expiry', data.aithentication_token.expiry)
                     showSuccess()
                     location.href = "/"
                 }else {
