@@ -298,8 +298,6 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 }
 
 func (app *application) authenticateToken(r *http.Request) (*models.User, error) {
-	var u models.User
-
 	authorizationHeader := r.Header.Get("Authorization")
 	if authorizationHeader == "" {
 		return nil, errors.New("no aithorization header received")
@@ -315,7 +313,13 @@ func (app *application) authenticateToken(r *http.Request) (*models.User, error)
 		return nil, errors.New("authentication token wrong size")
 	}
 
-	return &u, nil
+	// get the user from the tokens table
+	user, err := app.DB.GetUserForToken(token)
+	if err != nil {
+		return nil, errors.New("no matching user found")
+	}
+
+	return user, nil
 }
 
 func (app *application) CheckAuthentication(w http.ResponseWriter, r *http.Request) {
