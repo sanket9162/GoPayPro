@@ -4,9 +4,11 @@ import (
 	"ecommerce_go/internal/cards"
 	"ecommerce_go/internal/models"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -297,6 +299,21 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 
 func (app *application) authenticateToken(r *http.Request) (*models.User, error) {
 	var u models.User
+
+	authorizationHeader := r.Header.Get("Authorization")
+	if authorizationHeader == "" {
+		return nil, errors.New("no aithorization header received")
+	}
+
+	headerParts := strings.Split(authorizationHeader, " ")
+	if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+		return nil, errors.New("no authrization header received")
+	}
+
+	token := headerParts[1]
+	if len(token) != 26 {
+		return nil, errors.New("authentication token wrong size")
+	}
 
 	return &u, nil
 }
