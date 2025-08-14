@@ -3,6 +3,8 @@ package main
 import (
 	"ecommerce_go/internal/cards"
 	"ecommerce_go/internal/models"
+	"ecommerce_go/internal/urlsigner"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -329,5 +331,22 @@ func (app *application) Logout(w http.ResponseWriter, r *http.Request) {
 func (app *application) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	if err := app.renderTemplate(w, r, "forgot-password", &templateData{}); err != nil {
 		app.errorLog.Print(err)
+	}
+}
+
+func (app *application) ShowResetPasswrod(w http.ResponseWriter, r *http.Request) {
+	theUrl := r.RequestURI
+	testURL := fmt.Sprintf("%s%s", app.config.frontend, theUrl)
+
+	signer := urlsigner.Signer{
+		Secret: []byte(app.config.secretkey),
+	}
+
+	valid := signer.VerifyToken(testURL)
+
+	if valid {
+		w.Write([]byte("valid"))
+	} else {
+		w.Write([]byte("invalid"))
 	}
 }
