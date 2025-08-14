@@ -12,7 +12,7 @@ type Signer struct {
 	Secret []byte
 }
 
-func (s *Signer) GenerateTokenString(data string) string {
+func (s *Signer) GenerateTokenFromString(data string) string {
 	var urlToSign string
 
 	crypt := goalone.New(s.Secret, goalone.Timestamp)

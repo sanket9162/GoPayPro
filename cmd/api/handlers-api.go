@@ -3,6 +3,7 @@ package main
 import (
 	"ecommerce_go/internal/cards"
 	"ecommerce_go/internal/models"
+	"ecommerce_go/internal/urlsigner"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -406,30 +407,54 @@ func (app *application) SendPasswordResetEmail(w http.ResponseWriter, r *http.Re
 	var payload struct {
 		Email string `json:"email"`
 	}
+
 	err := app.readJSON(w, r, &payload)
 	if err != nil {
 		app.badRequest(w, r, err)
+		return
 	}
+
+	// verify that email exists
+	_, err = app.DB.GetUserByEmail(payload.Email)
+	if err != nil {
+		var resp struct {
+			Error   bool   `json:"error"`
+			Message string `json:"message"`
+		}
+		resp.Error = true
+		resp.Message = "No matching email found on our system"
+		app.writeJSON(w, http.StatusAccepted, resp)
+		return
+	}
+
+	link := fmt.Sprintf("%s/reset-password?email=%s", app.config.frontend, payload.Email)
+
+	sign := urlsigner.Signer{
+		Secret: []byte(app.config.secretkey),
+	}
+
+	signedLink := sign.GenerateTokenFromString(link)
 
 	var data struct {
 		Link string
 	}
 
-	data.Link = "http://www.google.com"
+	data.Link = signedLink
 
-	//send mail
+	// send mail
 	err = app.SendMail("info@widgets.com", "info@widgets.com", "Password Reset Request", "password-reset", data)
 	if err != nil {
 		app.errorLog.Println(err)
 		app.badRequest(w, r, err)
+		return
 	}
+
 	var resp struct {
 		Error   bool   `json:"error"`
-		Message string `json:""meddage`
+		Message string `json:"message"`
 	}
 
 	resp.Error = false
 
 	app.writeJSON(w, http.StatusCreated, resp)
-
 }
