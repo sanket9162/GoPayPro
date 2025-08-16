@@ -40,7 +40,7 @@ func (s *Signer) VerifyToken(token string) bool {
 	return true
 }
 
-func (s *Signer) Epired(token string, mintesUnitExpire int) bool {
+func (s *Signer) Expired(token string, mintesUnitExpire int) bool {
 	crypt := goalone.New(s.Secret, goalone.Timestamp)
 	ts := crypt.Parse([]byte(token))
 

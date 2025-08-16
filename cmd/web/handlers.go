@@ -346,6 +346,14 @@ func (app *application) ShowResetPasswrod(w http.ResponseWriter, r *http.Request
 
 	if !valid {
 		app.errorLog.Println("Invalid url - tampering detected")
+		return
+	}
+
+	// make mure  not expired
+	expired := signer.Expired(testURL, 60)
+	if expired {
+		app.errorLog.Println("Link expired")
+		return
 	}
 
 	data := make(map[string]interface{})
