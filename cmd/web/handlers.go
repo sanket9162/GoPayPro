@@ -2,6 +2,7 @@ package main
 
 import (
 	"ecommerce_go/internal/cards"
+	"ecommerce_go/internal/encryption"
 	"ecommerce_go/internal/models"
 	"ecommerce_go/internal/urlsigner"
 	"fmt"
@@ -12,7 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// Home displays the Home page
+// Home displays the home page
 func (app *application) Home(w http.ResponseWriter, r *http.Request) {
 	if err := app.renderTemplate(w, r, "home", &templateData{}); err != nil {
 		app.errorLog.Println(err)
@@ -48,6 +49,7 @@ func (app *application) GetTransactionData(r *http.Request) (TransactionData, er
 		app.errorLog.Println(err)
 		return txnData, err
 	}
+
 	firstName := r.Form.Get("first_name")
 	lastName := r.Form.Get("last_name")
 	email := r.Form.Get("email")
@@ -107,14 +109,14 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 
 	txnData, err := app.GetTransactionData(r)
 	if err != nil {
-		app.errorLog.Panicln(err)
+		app.errorLog.Println(err)
 		return
 	}
 
 	// create a new customer
 	customerID, err := app.SaveCustomer(txnData.FirstName, txnData.LastName, txnData.Email)
 	if err != nil {
-		app.errorLog.Panicln(err)
+		app.errorLog.Println(err)
 		return
 	}
 
@@ -145,7 +147,7 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 		StatusID:      1,
 		Quantity:      1,
 		Amount:        txnData.PaymentAmount,
-		CreateAt:      time.Now(),
+		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
 	}
 	_, err = app.SaveOrder(order)
@@ -153,18 +155,17 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 		app.errorLog.Println(err)
 		return
 	}
-	// should write this data to session, and then redirect user to new page
+
+	// write this data to session, and then redirect user to new page
 	app.Session.Put(r.Context(), "receipt", txnData)
 	http.Redirect(w, r, "/receipt", http.StatusSeeOther)
-
 }
 
 // VirtualTerminalPaymentSucceeded displays the receipt page for virtual terminal transactions
 func (app *application) VirtualTerminalPaymentSucceeded(w http.ResponseWriter, r *http.Request) {
-
 	txnData, err := app.GetTransactionData(r)
 	if err != nil {
-		app.errorLog.Panicln(err)
+		app.errorLog.Println(err)
 		return
 	}
 
@@ -187,24 +188,12 @@ func (app *application) VirtualTerminalPaymentSucceeded(w http.ResponseWriter, r
 		return
 	}
 
-	// should write this data to session, and then redirect user to new page
+	// write this data to session, and then redirect user to new page
 	app.Session.Put(r.Context(), "receipt", txnData)
 	http.Redirect(w, r, "/virtual-terminal-receipt", http.StatusSeeOther)
-
 }
 
-func (app *application) VirtualTerminalReceipt(w http.ResponseWriter, r *http.Request) {
-	txn := app.Session.Get(r.Context(), "receipt").(TransactionData)
-	data := make(map[string]interface{})
-	data["txn"] = txn
-	app.Session.Remove(r.Context(), "receipt")
-	if err := app.renderTemplate(w, r, "virtual-terminal-receipt", &templateData{
-		Data: data,
-	}); err != nil {
-		app.errorLog.Println(err)
-	}
-}
-
+// Receipt displays a receipt
 func (app *application) Receipt(w http.ResponseWriter, r *http.Request) {
 	txn := app.Session.Get(r.Context(), "receipt").(TransactionData)
 	data := make(map[string]interface{})
@@ -217,13 +206,27 @@ func (app *application) Receipt(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// SaveCusomer saves a customer and returns id
+// VirtualTerminalReceipt displays a receipt
+func (app *application) VirtualTerminalReceipt(w http.ResponseWriter, r *http.Request) {
+	txn := app.Session.Get(r.Context(), "receipt").(TransactionData)
+	data := make(map[string]interface{})
+	data["txn"] = txn
+	app.Session.Remove(r.Context(), "receipt")
+	if err := app.renderTemplate(w, r, "virtual-terminal-receipt", &templateData{
+		Data: data,
+	}); err != nil {
+		app.errorLog.Println(err)
+	}
+}
+
+// SaveCustomer saves a customer and returns id
 func (app *application) SaveCustomer(firstName, lastName, email string) (int, error) {
 	customer := models.Customer{
 		FirstName: firstName,
 		LastName:  lastName,
 		Email:     email,
 	}
+
 	id, err := app.DB.InsertCustomer(customer)
 	if err != nil {
 		return 0, err
@@ -231,7 +234,7 @@ func (app *application) SaveCustomer(firstName, lastName, email string) (int, er
 	return id, nil
 }
 
-// SaveTransaction saves a transaction and returns id
+// SaveTransaction saves a txn and returns id
 func (app *application) SaveTransaction(txn models.Transaction) (int, error) {
 	id, err := app.DB.InsertTransaction(txn)
 	if err != nil {
@@ -270,6 +273,7 @@ func (app *application) ChargeOnce(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// BronzePlan displays the bronze plan page
 func (app *application) BronzePlan(w http.ResponseWriter, r *http.Request) {
 	widget, err := app.DB.GetWidget(2)
 	if err != nil {
@@ -279,26 +283,29 @@ func (app *application) BronzePlan(w http.ResponseWriter, r *http.Request) {
 
 	data := make(map[string]interface{})
 	data["widget"] = widget
+
 	if err := app.renderTemplate(w, r, "bronze-plan", &templateData{
 		Data: data,
 	}); err != nil {
-		app.errorLog.Println(err)
+		app.errorLog.Print(err)
 	}
 }
 
+// BronzePlanReceipt displays the receipt for bronze plans
 func (app *application) BronzePlanReceipt(w http.ResponseWriter, r *http.Request) {
 	if err := app.renderTemplate(w, r, "receipt-plan", &templateData{}); err != nil {
 		app.errorLog.Print(err)
 	}
 }
 
-// LoginPage diaplays login page
+// LoginPage displays the login page
 func (app *application) LoginPage(w http.ResponseWriter, r *http.Request) {
 	if err := app.renderTemplate(w, r, "login", &templateData{}); err != nil {
 		app.errorLog.Print(err)
 	}
 }
 
+// PostLoginPage handles the posted login form
 func (app *application) PostLoginPage(w http.ResponseWriter, r *http.Request) {
 	app.Session.RenewToken(r.Context())
 
@@ -328,15 +335,18 @@ func (app *application) Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
+// ForgotPassword shows the forgot password page
 func (app *application) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	if err := app.renderTemplate(w, r, "forgot-password", &templateData{}); err != nil {
 		app.errorLog.Print(err)
 	}
 }
 
-func (app *application) ShowResetPasswrod(w http.ResponseWriter, r *http.Request) {
-	theUrl := r.RequestURI
-	testURL := fmt.Sprintf("%s%s", app.config.frontend, theUrl)
+// ShowResetPassword shows the reset password page (and validates url integrity)
+func (app *application) ShowResetPassword(w http.ResponseWriter, r *http.Request) {
+	email := r.URL.Query().Get("email")
+	theURL := r.RequestURI
+	testURL := fmt.Sprintf("%s%s", app.config.frontend, theURL)
 
 	signer := urlsigner.Signer{
 		Secret: []byte(app.config.secretkey),
@@ -349,20 +359,29 @@ func (app *application) ShowResetPasswrod(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// make mure  not expired
+	// make sure not expired
 	expired := signer.Expired(testURL, 60)
 	if expired {
 		app.errorLog.Println("Link expired")
 		return
 	}
 
+	encyrptor := encryption.Encryption{
+		Key: []byte(app.config.secretkey),
+	}
+
+	encryptedEmail, err := encyrptor.Encrypt(email)
+	if err != nil {
+		app.errorLog.Println("Encryption failed")
+		return
+	}
+
 	data := make(map[string]interface{})
-	data["email"] = r.URL.Query().Get("email")
+	data["email"] = encryptedEmail
 
 	if err := app.renderTemplate(w, r, "reset-password", &templateData{
 		Data: data,
 	}); err != nil {
 		app.errorLog.Print(err)
 	}
-
 }

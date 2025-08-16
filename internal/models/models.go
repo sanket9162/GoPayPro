@@ -50,7 +50,7 @@ type Order struct {
 	StatusID      int       `json:"status_id"`
 	Quantity      int       `json:"quantity"`
 	Amount        int       `json:"amount"`
-	CreateAt      time.Time `json:"-"`
+	CreatedAt     time.Time `json:"-"`
 	UpdatedAt     time.Time `json:"-"`
 }
 
@@ -58,7 +58,7 @@ type Order struct {
 type Status struct {
 	ID        int       `json:"id"`
 	Name      string    `json:"name"`
-	CreateAt  time.Time `json:"-"`
+	CreatedAt time.Time `json:"-"`
 	UpdatedAt time.Time `json:"-"`
 }
 
@@ -66,7 +66,7 @@ type Status struct {
 type TransactionStatus struct {
 	ID        int       `json:"id"`
 	Name      string    `json:"name"`
-	CreateAt  time.Time `json:"-"`
+	CreatedAt time.Time `json:"-"`
 	UpdatedAt time.Time `json:"-"`
 }
 
@@ -82,7 +82,7 @@ type Transaction struct {
 	PaymentMethod       string    `json:"payment_method"`
 	BankReturnCode      string    `json:"Bank_return_code"`
 	TransactionStatusID int       `json:"Transaction_status_id"`
-	CreateAt            time.Time `json:"-"`
+	CreatedAt           time.Time `json:"-"`
 	UpdatedAt           time.Time `json:"-"`
 }
 
@@ -93,7 +93,7 @@ type User struct {
 	LastName  string    `json:"Last_Name"`
 	Email     string    `json:"email"`
 	Password  string    `json:"password"`
-	CreateAt  time.Time `json:"-"`
+	CreatedAt time.Time `json:"-"`
 	UpdatedAt time.Time `json:"-"`
 }
 
@@ -102,7 +102,7 @@ type Customer struct {
 	FirstName string    `json:"First_name"`
 	LastName  string    `json:"Last_Name"`
 	Email     string    `json:"email"`
-	CreateAt  time.Time `json:"-"`
+	CreatedAt time.Time `json:"-"`
 	UpdatedAt time.Time `json:"-"`
 }
 
@@ -258,7 +258,7 @@ func (m *DBModel) GetUserByEmail(email string) (User, error) {
 		&u.LastName,
 		&u.Email,
 		&u.Password,
-		&u.CreateAt,
+		&u.CreatedAt,
 		&u.UpdatedAt,
 	)
 	if err != nil {

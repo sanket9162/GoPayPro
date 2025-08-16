@@ -2,6 +2,7 @@ package main
 
 import (
 	"ecommerce_go/internal/cards"
+	"ecommerce_go/internal/encryption"
 	"ecommerce_go/internal/models"
 	"ecommerce_go/internal/urlsigner"
 	"encoding/json"
@@ -183,7 +184,7 @@ func (app *application) CreateCustomerAndSubscribeToPlan(w http.ResponseWriter, 
 			StatusID:      1,
 			Quantity:      1,
 			Amount:        amount,
-			CreateAt:      time.Now(),
+			CreatedAt:     time.Now(),
 			UpdatedAt:     time.Now(),
 		}
 		_, err = app.SaveOrder(order)
@@ -472,7 +473,17 @@ func (app *application) ResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := app.DB.GetUserByEmail(payload.Email)
+	encyrptor := encryption.Encryption{
+		Key: []byte(app.config.secretkey),
+	}
+
+	realEmail, err := encyrptor.Decrypt(payload.Email)
+	if err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+
+	user, err := app.DB.GetUserByEmail(realEmail)
 	if err != nil {
 		app.badRequest(w, r, err)
 		return
