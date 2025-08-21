@@ -547,7 +547,7 @@ func (app *application) AllSubscriptions(w http.ResponseWriter, r *http.Request)
 func (app *application) RefundCharge(w http.ResponseWriter, r *http.Request) {
 	var chargeToRefund struct {
 		ID            int    `json:"id"`
-		PaymentIntent string `json:"ppi"`
+		PaymentIntent string `json:"pi"`
 		Amount        int    `json:"amount"`
 		Currency      string `json:"currency"`
 	}
