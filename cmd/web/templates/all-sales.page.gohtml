@@ -22,22 +22,40 @@
 
         </tbody>
     </table>
+
+    <nav>
+        <ul id="paginator" class="pagination">
+
+        </u>
+    </nav>
 {{end}}
 
 {{define "js"}}
 <script>
+let currentPage = 1;
+let pageSize = 3;
 
-    let currentPage = 1 
-    let pageSize = 3
+function paginator(pages, curPage) {
+    let p = document.getElementById("paginator");
 
-    document.addEventListener("DOMContentLoaded", function() {
+    let html = `<li class="page-item"><a href="#!" class="page-link pager" data-page="${curPage - 1}">&lt;</a></li>`;
 
+    for (var i = 0; i <= pages; i++) {
+        html += `<li class="page-item"><a href="#!" class="page-link pager" data-page="${i + 1}">${i + 1}</a></li>`;
+    }
+
+    html += `<li class="page-item"><a href="#!" class="page-link pager" data-page="${curPage + 1}">&gt;</a></li>`;
+
+    p.innerHTML = html;
+}
+
+function updateTable(ps, cp) {
     let token = localStorage.getItem("token");
     let tbody = document.getElementById("sales-table").getElementsByTagName("tbody")[0];
 
     let body = {
-        page_size: pageSize,
-        currentPage: currentPage
+        page_size: ps,
+        page: cp,
     }
 
     const requestOptions = {
@@ -52,8 +70,7 @@
 
     fetch("{{.API}}/api/admin/all-sales", requestOptions)
     .then(response => response.json())
-    .then(function (data) {
-        console.log(data)        
+    .then(function (data) {        
         if (data.orders) {
             data.orders.forEach(function(i) {
                 let newRow = tbody.insertRow();
@@ -76,11 +93,12 @@
 
                 newCell = newRow.insertCell();
                 if (i.status_id != 1) {
-                    newCell.innerHTML = `<span class="badge bg-danger">Refunded</span>`
+                    newCell.innerHTML = `<span class="badge bg-danger">Refunded</span>`;
                 } else {
-                    newCell.innerHTML = `<span class="badge bg-success">Charged</span>`
+                    newCell.innerHTML = `<span class="badge bg-success">Charged</span>`;
                 }
             })
+            paginator(data.last_page, data.current_page);
         } else {
             let newRow = tbody.insertRow();
             let newCell = newRow.insertCell();
@@ -88,14 +106,18 @@
             newCell.innerHTML = "No data available";
         }
     })
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    updateTable(pageSize, currentPage);
 })
 
-    function formatCurrency(amount) {
-        let c = parseFloat(amount/100);
-        return c.toLocaleString("en-CA", {
-            style: "currency",
-            currency: "CAD",
-        })
-    }
+function formatCurrency(amount) {
+    let c = parseFloat(amount/100);
+    return c.toLocaleString("en-CA", {
+        style: "currency",
+        currency: "CAD",
+    })
+}
 </script>
 {{end}}
