@@ -46,6 +46,7 @@ func (app *application) addDefaultData(td *templateData, r *http.Request) *templ
 	} else {
 		td.IsAuthenticated = 0
 	}
+
 	return td
 }
 

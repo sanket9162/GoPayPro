@@ -94,14 +94,14 @@ function updateTable(ps, cp) {
                 newCell.innerHTML = `<a href="/admin/sales/${i.id}">Order ${i.id}</a>`;
 
                 newCell = newRow.insertCell();
-                let item = document.createTextNode(i.Customer.Last_Name + ", " + i.Customer.First_name);
+                let item = document.createTextNode(i.customer.last_name + ", " + i.customer.first_name);
                 newCell.appendChild(item);
 
                 newCell = newRow.insertCell();
-                item = document.createTextNode(i.Widget.name);
+                item = document.createTextNode(i.widget.name);
                 newCell.appendChild(item);
 
-                let cur = formatCurrency(i.Transaction.amount);
+                let cur = formatCurrency(i.transaction.amount);
                 newCell = newRow.insertCell();
                 item = document.createTextNode(cur);
                 newCell.appendChild(item);

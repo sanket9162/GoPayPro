@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
-	"text/template"
+	"html/template"
 	"time"
 
 	mail "github.com/xhit/go-simple-mail/v2"
@@ -30,6 +30,7 @@ func (app *application) SendMail(from, to, subject, tmpl string, data interface{
 
 	formattedMessage := tpl.String()
 
+
 	templateToRender = fmt.Sprintf("templates/%s.plain.tmpl", tmpl)
 	t, err = template.New("email-plain").ParseFS(emailTemplateFS, templateToRender)
 	if err != nil {
@@ -43,6 +44,8 @@ func (app *application) SendMail(from, to, subject, tmpl string, data interface{
 	}
 
 	plainMessage := tpl.String()
+
+	app.infoLog.Println(formattedMessage, plainMessage)
 
 	// send the mail
 	server := mail.NewSMTPClient()
@@ -73,6 +76,8 @@ func (app *application) SendMail(from, to, subject, tmpl string, data interface{
 		app.errorLog.Println(err)
 		return err
 	}
+
+	app.infoLog.Println("send mail")
 
 	return nil
 }

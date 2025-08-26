@@ -5,7 +5,7 @@
 {{end}}
 
 {{define "content"}}
-   {{$txn := index .Data "txn"}}
+    {{$txn := index .Data "txn"}}
     <h2 class="mt-5">Payment Succeeded</h2>
     <hr>
     <p>Payment Intent: {{$txn.PaymentIntentID}}</p>
@@ -15,7 +15,7 @@
     <p>Payment Amount: {{formatCurrency $txn.PaymentAmount}}</p>
     <p>Currency: {{$txn.PaymentCurrency}}</p>
     <p>Last Four: {{$txn.LastFour}}</p>
-    <p>Bank Return: {{$txn.BankReturnCode}}</p>
-    <p>Expirt Date: {{$txn.PaymentIntentID}}/{{$txn.ExpiryYear}}</p>
+    <p>Bank Return Code: {{$txn.BankReturnCode}}</p>
+    <p>Expiry Date: {{$txn.ExpiryMonth}}/{{$txn.ExpiryYear}}</p>
 
 {{end}}

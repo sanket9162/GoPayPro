@@ -26,7 +26,7 @@ type stripePayload struct {
 	CardBrand     string `json:"card_brand"`
 	ExpiryMonth   int    `json:"exp_month"`
 	ExpiryYear    int    `json:"exp_year"`
-	LastFour      string `json:"lastfour"`
+	LastFour      string `json:"last_four"`
 	Plan          string `json:"plan"`
 	ProductID     string `json:"product_id"`
 	FirstName     string `json:"first_name"`
@@ -40,6 +40,7 @@ type jsonResponse struct {
 	ID      int    `json:"id,omitempty"`
 }
 
+// GetPaymentIntent gets a payment intent, and returns json (or error json)
 func (app *application) GetPaymentIntent(w http.ResponseWriter, r *http.Request) {
 	var payload stripePayload
 
@@ -94,6 +95,7 @@ func (app *application) GetPaymentIntent(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+// GetWidgetByID gets one widget by id and returns as JSON
 func (app *application) GetWidgetByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	widgetID, _ := strconv.Atoi(id)
@@ -104,7 +106,7 @@ func (app *application) GetWidgetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err := json.MarshalIndent(widget, "", "  ")
+	out, err := json.MarshalIndent(widget, "", "   ")
 	if err != nil {
 		app.errorLog.Println(err)
 		return
@@ -121,8 +123,6 @@ func (app *application) CreateCustomerAndSubscribeToPlan(w http.ResponseWriter, 
 		app.errorLog.Println(err)
 		return
 	}
-
-	app.infoLog.Println(data.Email, data.LastFour, data.PaymentMethod, data.Plan)
 
 	card := cards.Card{
 		Secret:   app.config.stripe.secret,
@@ -146,8 +146,9 @@ func (app *application) CreateCustomerAndSubscribeToPlan(w http.ResponseWriter, 
 		if err != nil {
 			app.errorLog.Println(err)
 			okay = false
+			txnMsg = "Error subscribing customer"
 		}
-		app.infoLog.Println("subscription id is", subscription)
+		app.infoLog.Println("subscription id is", subscription.ID)
 	}
 
 	if okay {
@@ -155,11 +156,12 @@ func (app *application) CreateCustomerAndSubscribeToPlan(w http.ResponseWriter, 
 		customerID, err := app.SaveCustomer(data.FirstName, data.LastName, data.Email)
 		if err != nil {
 			app.errorLog.Println(err)
-			okay = false
-			txnMsg = "Error subscribing customer"
+			return
 		}
+
 		// create a new txn
 		amount, _ := strconv.Atoi(data.Amount)
+
 		txn := models.Transaction{
 			Amount:              amount,
 			Currency:            "cad",
@@ -173,11 +175,11 @@ func (app *application) CreateCustomerAndSubscribeToPlan(w http.ResponseWriter, 
 
 		txnID, err := app.SaveTransaction(txn)
 		if err != nil {
-			fmt.Println("Error txn model Transaction")
 			app.errorLog.Println(err)
 			return
 		}
 
+		// create order
 		order := models.Order{
 			WidgetID:      productID,
 			TransactionID: txnID,
@@ -188,21 +190,20 @@ func (app *application) CreateCustomerAndSubscribeToPlan(w http.ResponseWriter, 
 			CreatedAt:     time.Now(),
 			UpdatedAt:     time.Now(),
 		}
+
 		_, err = app.SaveOrder(order)
 		if err != nil {
 			app.errorLog.Println(err)
 			return
 		}
-
 	}
-	// msg := ""
 
 	resp := jsonResponse{
 		OK:      okay,
 		Message: txnMsg,
 	}
 
-	out, err := json.MarshalIndent(resp, "", "")
+	out, err := json.MarshalIndent(resp, "", "  ")
 	if err != nil {
 		app.errorLog.Println(err)
 		return
@@ -210,16 +211,16 @@ func (app *application) CreateCustomerAndSubscribeToPlan(w http.ResponseWriter, 
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
-
 }
 
-// SaveCusomer saves a customer and returns id
+// SaveCustomer saves a customer and returns id
 func (app *application) SaveCustomer(firstName, lastName, email string) (int, error) {
 	customer := models.Customer{
 		FirstName: firstName,
 		LastName:  lastName,
 		Email:     email,
 	}
+
 	id, err := app.DB.InsertCustomer(customer)
 	if err != nil {
 		return 0, err
@@ -227,7 +228,7 @@ func (app *application) SaveCustomer(firstName, lastName, email string) (int, er
 	return id, nil
 }
 
-// SaveTransaction saves a transaction and returns id
+// SaveTransaction saves a txn and returns id
 func (app *application) SaveTransaction(txn models.Transaction) (int, error) {
 	id, err := app.DB.InsertTransaction(txn)
 	if err != nil {
@@ -245,6 +246,7 @@ func (app *application) SaveOrder(order models.Order) (int, error) {
 	return id, nil
 }
 
+// CreateAuthToken creates and sends an auth token, if user supplies valid information
 func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) {
 	var userInput struct {
 		Email    string `json:"email"`
@@ -257,7 +259,7 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// get the user from database by email; send error if invalid email
+	// get the user from the database by email; send error if invalid email
 	user, err := app.DB.GetUserByEmail(userInput.Email)
 	if err != nil {
 		app.invalidCredentials(w)
@@ -270,6 +272,7 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 		app.invalidCredentials(w)
 		return
 	}
+
 	if !validPassword {
 		app.invalidCredentials(w)
 		return
@@ -282,17 +285,19 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// save to datbase
+	// save to database
 	err = app.DB.InsertToken(token, user)
 	if err != nil {
 		app.badRequest(w, r, err)
 		return
 	}
 
+	// send response
+
 	var payload struct {
 		Error   bool          `json:"error"`
 		Message string        `json:"message"`
-		Token   *models.Token `json:"aithentication_token"`
+		Token   *models.Token `json:"authentication_token"`
 	}
 	payload.Error = false
 	payload.Message = fmt.Sprintf("token for %s created", userInput.Email)
@@ -301,6 +306,7 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 	_ = app.writeJSON(w, http.StatusOK, payload)
 }
 
+// authenticateToken checks an auth token for validity
 func (app *application) authenticateToken(r *http.Request) (*models.User, error) {
 	authorizationHeader := r.Header.Get("Authorization")
 	if authorizationHeader == "" {
@@ -326,6 +332,7 @@ func (app *application) authenticateToken(r *http.Request) (*models.User, error)
 	return user, nil
 }
 
+// CheckAuthentication checks auth status
 func (app *application) CheckAuthentication(w http.ResponseWriter, r *http.Request) {
 	// validate the token, and get associated user
 	user, err := app.authenticateToken(r)
@@ -344,6 +351,7 @@ func (app *application) CheckAuthentication(w http.ResponseWriter, r *http.Reque
 	app.writeJSON(w, http.StatusOK, payload)
 }
 
+// VirtualTerminalPaymentSucceeded displays a page with receipt information
 func (app *application) VirtualTerminalPaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 	var txnData struct {
 		PaymentAmount   int    `json:"amount"`
@@ -352,10 +360,10 @@ func (app *application) VirtualTerminalPaymentSucceeded(w http.ResponseWriter, r
 		LastName        string `json:"last_name"`
 		Email           string `json:"email"`
 		PaymentIntent   string `json:"payment_intent"`
-		PaymentMethos   string `json:"payment_method"`
+		PaymentMethod   string `json:"payment_method"`
 		BankReturnCode  string `json:"bank_return_code"`
 		ExpiryMonth     int    `json:"expiry_month"`
-		ExpiryYear      int    `joson:"expiry_year"`
+		ExpiryYear      int    `json:"expiry_year"`
 		LastFour        string `json:"last_four"`
 	}
 
@@ -376,7 +384,7 @@ func (app *application) VirtualTerminalPaymentSucceeded(w http.ResponseWriter, r
 		return
 	}
 
-	pm, err := card.GetPaymentMethod(txnData.PaymentMethos)
+	pm, err := card.GetPaymentMethod(txnData.PaymentMethod)
 	if err != nil {
 		app.badRequest(w, r, err)
 		return
@@ -393,10 +401,11 @@ func (app *application) VirtualTerminalPaymentSucceeded(w http.ResponseWriter, r
 		ExpiryMonth:         txnData.ExpiryMonth,
 		ExpiryYear:          txnData.ExpiryYear,
 		PaymentIntent:       txnData.PaymentIntent,
-		PaymentMethod:       txnData.PaymentMethos,
+		PaymentMethod:       txnData.PaymentMethod,
 		BankReturnCode:      pi.Charges.Data[0].ID,
 		TransactionStatusID: 2,
 	}
+
 	_, err = app.SaveTransaction(txn)
 	if err != nil {
 		app.badRequest(w, r, err)
@@ -406,6 +415,7 @@ func (app *application) VirtualTerminalPaymentSucceeded(w http.ResponseWriter, r
 	app.writeJSON(w, http.StatusOK, txn)
 }
 
+// SendPasswordResetEmail sends an email with a signed url to allow user to reset password
 func (app *application) SendPasswordResetEmail(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
 		Email string `json:"email"`
@@ -462,6 +472,7 @@ func (app *application) SendPasswordResetEmail(w http.ResponseWriter, r *http.Re
 	app.writeJSON(w, http.StatusCreated, resp)
 }
 
+// ResetPassword resets a user's password in the database
 func (app *application) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
 		Email    string `json:"email"`
@@ -512,6 +523,7 @@ func (app *application) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	app.writeJSON(w, http.StatusCreated, resp)
 }
 
+// AllSales returns all sales as a slice
 func (app *application) AllSales(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
 		PageSize    int `json:"page_size"`
@@ -524,7 +536,7 @@ func (app *application) AllSales(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	allsales, lastPage, totalRecords, err := app.DB.GetAllOrdersPaginated(payload.PageSize, payload.CurrentPage)
+	allSales, lastPage, totalRecords, err := app.DB.GetAllOrdersPaginated(payload.PageSize, payload.CurrentPage)
 	if err != nil {
 		app.badRequest(w, r, err)
 		return
@@ -542,11 +554,25 @@ func (app *application) AllSales(w http.ResponseWriter, r *http.Request) {
 	resp.PageSize = payload.PageSize
 	resp.LastPage = lastPage
 	resp.TotalRecords = totalRecords
-	resp.Orders = allsales
+	resp.Orders = allSales
 
 	app.writeJSON(w, http.StatusOK, resp)
 }
 
+// AllSubscriptions returns all subscriptions as a slice
+func (app *application) AllSubscriptions(w http.ResponseWriter, r *http.Request) {
+	// get all sales from database
+
+	allSales, err := app.DB.GetAllSubscriptions()
+	if err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, allSales)
+}
+
+// GetSale returns one sale as json, by id
 func (app *application) GetSale(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	orderID, _ := strconv.Atoi(id)
@@ -560,16 +586,7 @@ func (app *application) GetSale(w http.ResponseWriter, r *http.Request) {
 	app.writeJSON(w, http.StatusOK, order)
 }
 
-func (app *application) AllSubscriptions(w http.ResponseWriter, r *http.Request) {
-	allsales, err := app.DB.GetAllSubscriptions()
-	if err != nil {
-		app.badRequest(w, r, err)
-		return
-	}
-
-	app.writeJSON(w, http.StatusOK, allsales)
-}
-
+// RefundCharge accepts a json payload and tries to refund a charge
 func (app *application) RefundCharge(w http.ResponseWriter, r *http.Request) {
 	var chargeToRefund struct {
 		ID            int    `json:"id"`
@@ -585,6 +602,7 @@ func (app *application) RefundCharge(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate
+
 	card := cards.Card{
 		Secret:   app.config.stripe.secret,
 		Key:      app.config.stripe.key,
@@ -597,9 +615,11 @@ func (app *application) RefundCharge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// update status in db
 	err = app.DB.UpdateOrderStatus(chargeToRefund.ID, 2)
 	if err != nil {
-		app.badRequest(w, r, errors.New("the charge was refund, but teh database could not abe updated"))
+		app.badRequest(w, r, errors.New("the charge was refunded, but the database could not be updated"))
+		return
 	}
 
 	var resp struct {
@@ -610,6 +630,7 @@ func (app *application) RefundCharge(w http.ResponseWriter, r *http.Request) {
 	resp.Message = "Charge refunded"
 
 	app.writeJSON(w, http.StatusOK, resp)
+
 }
 
 func (app *application) CancelSubscription(w http.ResponseWriter, r *http.Request) {
@@ -637,9 +658,11 @@ func (app *application) CancelSubscription(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// update status in db
 	err = app.DB.UpdateOrderStatus(subToCancel.ID, 3)
 	if err != nil {
-		app.badRequest(w, r, errors.New("the subscription was cancelled, but teh database could not abe updated"))
+		app.badRequest(w, r, errors.New("the subscription was cancelled, but the database could not be updated"))
+		return
 	}
 
 	var resp struct {
