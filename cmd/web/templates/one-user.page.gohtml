@@ -8,6 +8,36 @@
 <h2 class="mt-5">Admin Users</h2>
 <hr>
 
+<form action="" method="post" name="user_form" id="user_form" class="needs-validation" autocomplete="off" novalidate="">
+    <div class="mb-3">
+        <label for="first_name" class="fomr-label">First Name</label>
+        <input type="text" class="form-control" id="first_name" name="first_name" required="" autocomplete="first_name-new">
+    </div>
+        <div class="mb-3">
+        <label for="last_name" class="fomr-label">Last Name</label>
+        <input type="text" class="form-control" id="last_name" name="last_name" required="" autocomplete="first_name-new">
+    </div>    
+    <div class="mb-3">
+        <label for="password" class="fomr-label">Password</label>
+        <input type="password" class="form-control" id="password" name="password" autocomplete="password-new">
+    </div>
+        <div class="mb-3">
+        <label for="verify_password" class="fomr-label">Verify Password</label>
+        <input type="text" class="form-control" id="verify_password" name="verify_password" autocomplete="verify_password-new">
+    </div>
+    <hr>
+    <div class="float-start">
+        <a href="javascript:void(0);" class="btn btn-primary" id="saveBtn">Save Changes</a>
+        <a href="/admin/all-users" class="btn btn-warning" id="saveBtn">Cancel</a>
+    </div>
+
+    <div class="float-end">
+        <a href="javascript:void(0);" class="btn btn-danger" id="saveBtn">Delete</a>
+
+    </div>
+
+</form>
+
 {{end}}
 
 {{define "js"}}
