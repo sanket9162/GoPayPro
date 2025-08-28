@@ -649,7 +649,7 @@ func (m *DBModel) GetAllUsers() ([]*User, error) {
 	return users, nil
 }
 
-func (m *DBModel) GetOneUser() (User, error) {
+func (m *DBModel) GetOneUser(id int) (User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -662,7 +662,7 @@ func (m *DBModel) GetOneUser() (User, error) {
 			users
 		where id = ?`
 
-	row := m.DB.QueryRowContext(ctx, query)
+	row := m.DB.QueryRowContext(ctx, query, id)
 	err := row.Scan(
 		&u.ID,
 		&u.LastName,
