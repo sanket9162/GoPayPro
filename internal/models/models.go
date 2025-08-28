@@ -618,7 +618,7 @@ func (m *DBModel) GetAllUsers() ([]*User, error) {
 
 	query := `
 		select 
-			id, last_name, first_name, email, created_at, update_at
+			id, last_name, first_name, email, created_at, updated_at
 		from
 			users
 		order by
@@ -657,7 +657,7 @@ func (m *DBModel) GetOneUser() (User, error) {
 
 	query := `
 		select 
-			id, last_name, first_name, email, created_at, update_at
+			id, last_name, first_name, email, created_at, updated_at
 		from
 			users
 		where id = ?`
@@ -687,7 +687,7 @@ func (m *DBModel) EditUser(u User) error {
 			first_name = ?,
 			last_name = ?,
 			email = ?,
-			update_at = ?,
+			updated_at = ?,
 		where
 			id = ?`
 
@@ -716,7 +716,7 @@ func (m *DBModel) AddUser(u User, hash string) error {
 			email,
 			password,
 			created_at,
-			update_at,)
+			updated_at,)
 		values (?, ?, ?, ?, ?, ?)`
 
 	_, err := m.DB.ExecContext(ctx, stmt,
