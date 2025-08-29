@@ -760,7 +760,7 @@ func (app *application) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var resp struct {
-		Error   bool   `json:"error`
+		Error   bool   `json:"error"`
 		Message string `json:"message"`
 	}
 
