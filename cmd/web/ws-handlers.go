@@ -20,7 +20,7 @@ type WsPayload struct {
 	Conn        WebSocketConnection `json:"-"`
 }
 
-type WsJsonReponse struct {
+type WsJsonResponse struct {
 	Action  string `json:"action"`
 	Message string `json:"message"`
 	UserID  int    `json:"user_id"`
@@ -42,9 +42,10 @@ func (app *application) WsEndPoint(w http.ResponseWriter, r *http.Request) {
 		app.errorLog.Println(err)
 		return
 	}
-	app.infoLog.Printf(fmt.Sprintf("client coonnected from %s", r.RemoteAddr))
-	var response WsJsonReponse
-	response.Message = "connected to server"
+
+	app.infoLog.Println(fmt.Sprintf("Client connected from %s", r.RemoteAddr))
+	var response WsJsonResponse
+	response.Message = "Connected to server"
 
 	err = ws.WriteJSON(response)
 	if err != nil {
@@ -55,13 +56,13 @@ func (app *application) WsEndPoint(w http.ResponseWriter, r *http.Request) {
 	conn := WebSocketConnection{Conn: ws}
 	clients[conn] = ""
 
-	go app.ListenForWs(&conn)
+	go app.ListenForWS(&conn)
 }
 
-func (app *application) ListenForWs(conn *WebSocketConnection) {
+func (app *application) ListenForWS(conn *WebSocketConnection) {
 	defer func() {
 		if r := recover(); r != nil {
-			app.errorLog.Println("ERROR:", fmt.Sprintf("%v", r))
+			app.errorLog.Println("ERORR:", fmt.Sprintf("%v", r))
 		}
 	}()
 
@@ -70,7 +71,7 @@ func (app *application) ListenForWs(conn *WebSocketConnection) {
 	for {
 		err := conn.ReadJSON(&payload)
 		if err != nil {
-
+			// do nothing
 		} else {
 			payload.Conn = *conn
 			wsChan <- payload
@@ -78,8 +79,8 @@ func (app *application) ListenForWs(conn *WebSocketConnection) {
 	}
 }
 
-func (app *application) listenToWsChannel() {
-	var response WsJsonReponse
+func (app *application) ListenToWsChannel() {
+	var response WsJsonResponse
 	for {
 		e := <-wsChan
 		switch e.Action {
@@ -88,13 +89,15 @@ func (app *application) listenToWsChannel() {
 			response.Message = "Your account has been deleted"
 			response.UserID = e.UserID
 			app.broadcastToAll(response)
+
 		default:
 		}
 	}
 }
 
-func (app *application) broadcastToAll(response WsJsonReponse) {
+func (app *application) broadcastToAll(response WsJsonResponse) {
 	for client := range clients {
+		// broadcast to every connected client
 		err := client.WriteJSON(response)
 		if err != nil {
 			app.errorLog.Printf("Websocket err on %s: %s", response.Action, err)

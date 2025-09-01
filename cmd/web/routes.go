@@ -13,7 +13,7 @@ func (app *application) routes() http.Handler {
 	mux.Get("/", app.Home)
 	mux.Get("/ws", app.WsEndPoint)
 
-	mux.Route("/admin", func(mux chi.Router) {
+	mux.Route("/admin", func(mux chi.Router){
 		mux.Use(app.Auth)
 		mux.Get("/virtual-terminal", app.VirtualTerminal)
 		mux.Get("/all-sales", app.AllSales)
@@ -21,8 +21,7 @@ func (app *application) routes() http.Handler {
 		mux.Get("/sales/{id}", app.ShowSale)
 		mux.Get("/subscriptions/{id}", app.ShowSubscription)
 		mux.Get("/all-users", app.AllUsers)
-		mux.Get("/all-users/{id}", app.OneUsers)
-
+		mux.Get("/all-users/{id}", app.OneUser)
 	})
 
 	mux.Get("/widget/{id}", app.ChargeOnce)
