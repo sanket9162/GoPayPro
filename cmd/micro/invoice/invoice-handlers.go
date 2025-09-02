@@ -9,6 +9,7 @@ import (
 	"github.com/phpdave11/gofpdf/contrib/gofpdi"
 )
 
+// Order describes the json payload received by this microservice
 type Order struct {
 	ID        int       `json:"id"`
 	Quantity  int       `json:"quantity"`
@@ -17,9 +18,10 @@ type Order struct {
 	FirstName string    `json:"first_name"`
 	LastName  string    `json:"last_name"`
 	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"-"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
+// CreateAndSendInvoice creates an invoice as a PDF, and emails it to recipient
 func (app *application) CreateAndSendInvoice(w http.ResponseWriter, r *http.Request) {
 	// receive json
 	var order Order
@@ -30,15 +32,6 @@ func (app *application) CreateAndSendInvoice(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// order.ID = 100
-	// order.Email = "me@me.com"
-	// order.FirstName = "me"
-	// order.LastName = "sanket"
-	// order.Quantity = 1
-	// order.Amount = 1000
-	// order.Product = "widget"
-	// order.CreatedAt = time.Now()
-
 	// generate a pdf invoice
 	err = app.createInvoicePDF(order)
 	if err != nil {
@@ -47,12 +40,12 @@ func (app *application) CreateAndSendInvoice(w http.ResponseWriter, r *http.Requ
 	}
 
 	// create mail attachment
-	attachments := []string{
+	attachments := []string {
 		fmt.Sprintf("./invoices/%d.pdf", order.ID),
 	}
 
 	// send mail with attachment
-	err = app.SendMail("info@wigets.com", order.Email, "your invoice", "invoice", attachments, nil)
+	err = app.SendMail("info@widgets.com", order.Email, "Your invoice", "invoice", attachments, nil)
 	if err != nil {
 		app.badRequest(w, r, err)
 		return
@@ -63,14 +56,14 @@ func (app *application) CreateAndSendInvoice(w http.ResponseWriter, r *http.Requ
 		Error   bool   `json:"error"`
 		Message string `json:"message"`
 	}
-
 	resp.Error = false
-	resp.Message = fmt.Sprintf("Invoice %d.pdf create and sent to %s", order.ID, order.Email)
+	resp.Message = fmt.Sprintf("Invoice %d.pdf created and sent to %s", order.ID, order.Email)
 	app.writeJSON(w, http.StatusCreated, resp)
 }
 
+// createInvoicePDF generates a PDF version of the invoice
 func (app *application) createInvoicePDF(order Order) error {
-	pdf := gofpdf.New("p", "mm", "Letter", "")
+	pdf := gofpdf.New("P", "mm", "Letter", "")
 	pdf.SetMargins(10, 13, 10)
 	pdf.SetAutoPageBreak(true, 0)
 
@@ -79,7 +72,7 @@ func (app *application) createInvoicePDF(order Order) error {
 	t := importer.ImportPage(pdf, "./pdf-templates/invoice.pdf", 1, "/MediaBox")
 
 	pdf.AddPage()
-	importer.UseImportedTemplate(pdf, t, 0, 0, 215.0, 0)
+	importer.UseImportedTemplate(pdf, t, 0, 0, 215.9, 0)
 
 	// write info
 	pdf.SetY(50)
@@ -95,9 +88,10 @@ func (app *application) createInvoicePDF(order Order) error {
 	pdf.SetY(93)
 	pdf.CellFormat(155, 8, order.Product, "", 0, "L", false, 0, "")
 	pdf.SetX(166)
-	pdf.CellFormat(20, 8, fmt.Sprintf("%s", order.Quantity), "", 0, "C", false, 0, "")
+	pdf.CellFormat(20, 8, fmt.Sprintf("%d", order.Quantity), "", 0, "C", false, 0, "")
+
 	pdf.SetX(185)
-	pdf.CellFormat(20, 8, fmt.Sprintf("$%.2f", float32(order.Amount/100.0)), "", 0, "R", false, 0, "")
+	pdf.CellFormat(20, 8, fmt.Sprintf("$%.2f", float32(order.Amount / 100.0)), "", 0, "R", false, 0, "")
 
 	invoicePath := fmt.Sprintf("./invoices/%d.pdf", order.ID)
 	err := pdf.OutputFileAndClose(invoicePath)
