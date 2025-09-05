@@ -6,6 +6,7 @@ import (
 	"ecommerce_go/internal/encryption"
 	"ecommerce_go/internal/models"
 	"ecommerce_go/internal/urlsigner"
+	"ecommerce_go/internal/validator"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -137,6 +138,14 @@ func (app *application) CreateCustomerAndSubscribeToPlan(w http.ResponseWriter, 
 	if err != nil {
 		app.errorLog.Println(err)
 		return
+	}
+
+	// validator
+	v := validator.New()
+	v.Check(len(data.FirstName) > 1, "first_name", "Must be at least 2 characters")
+
+	if !v.Valid() {
+		app.failedValidaation(w, r, v.Error)
 	}
 
 	card := cards.Card{
